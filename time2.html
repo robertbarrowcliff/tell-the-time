@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Telling Helper</title>
+
+  <style>
+    :root {
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #5b6472;
+      --blue: #b9e3ff;
+      --blue-deep: #005fa8;
+      --pink: #ffc6df;
+      --pink-deep: #b72d68;
+      --green: #e7f8ed;
+      --green-deep: #237a3b;
+      --yellow: #fff3c4;
+      --purple: #eee7ff;
+      --purple-deep: #5b3aa4;
+      --orange: #fff1df;
+      --orange-deep: #a95d00;
+      --border: #d9e2f1;
+      --shadow: rgba(31, 41, 55, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #f8fbff 0%, #edf5ff 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(1240px, 100%);
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 28px;
+      box-shadow: 0 18px 40px var(--shadow);
+      padding: 28px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      color: #14345f;
+    }
+
+    .subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.45rem);
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.45;
+    }
+
+    .level-pill {
+      display: inline-block;
+      margin-top: 14px;
+      background: var(--green);
+      color: var(--green-deep);
+      border: 2px solid #bfe8cc;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 1.05rem;
+      font-weight: bold;
+    }
+
+    .mode-tabs,
+    .level-tabs {
+      display: grid;
+      gap: 10px;
+      margin: 18px auto 0;
+    }
+
+    .mode-tabs {
+      grid-template-columns: repeat(3, 1fr);
+      max-width: 720px;
+    }
+
+    .level-tabs {
+      grid-template-columns: repeat(5, 1fr);
+      max-width: 1050px;
+    }
+
+    .mode-tab,
+    .level-tab {
+      background: #ffffff;
+      border: 2px solid var(--border);
+      color: #14345f;
+      padding: 12px;
+      border-radius: 16px;
+      font-size: 0.98rem;
+      line-height: 1.25;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(31, 41, 55, 0.06);
+    }
+
+    .mode-tab.active,
+    .level-tab.active {
+      background: var(--purple);
+      border-color: #cdbfff;
+      color: var(--purple-deep);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 26px;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .level-tabs,
+      .mode-tabs {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .clock-panel,
+    .teaching-panel {
+      background: #fbfdff;
+      border: 2px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+    }
+
+    .clock-shell {
+      position: relative;
+      width: min(470px, 90vw);
+      margin: 0 auto;
+    }
+
+    .clock-legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 0 auto 16px;
+      width: min(440px, 100%);
+    }
+
+    .legend-item {
+      text-align: center;
+      font-weight: bold;
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: white;
+      box-shadow: 0 4px 12px var(--shadow);
+      border: 2px solid var(--border);
+    }
+
+    .legend-to {
+      color: var(--pink-deep);
+      background: #fff1f7;
+      border-color: #ffc6df;
+    }
+
+    .legend-past {
+      color: var(--blue-deep);
+      background: #eef8ff;
+      border-color: #b9e3ff;
+    }
+
+    .clock-wrap {
+      position: relative;
+      width: min(450px, 90vw);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        var(--blue) 0deg 180deg,
+        var(--pink) 180deg 360deg
+      );
+      border: 8px solid #ffffff;
+      box-shadow: inset 0 0 0 3px #9fc2e7, 0 10px 25px var(--shadow);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .clock-inner {
+      position: absolute;
+      inset: 12%;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.72);
+      border: 2px dashed #c8d8ee;
+    }
+
+    .number {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.3rem;
+      color: #14345f;
+      box-shadow: 0 3px 8px var(--shadow);
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .n12 { left: 50%; top: 7%; }
+    .n1 { left: 71.5%; top: 12.8%; }
+    .n2 { left: 87.2%; top: 28.5%; }
+    .n3 { left: 93%; top: 50%; }
+    .n4 { left: 87.2%; top: 71.5%; }
+    .n5 { left: 71.5%; top: 87.2%; }
+    .n6 { left: 50%; top: 93%; }
+    .n7 { left: 28.5%; top: 87.2%; }
+    .n8 { left: 12.8%; top: 71.5%; }
+    .n9 { left: 7%; top: 50%; }
+    .n10 { left: 12.8%; top: 28.5%; }
+    .n11 { left: 28.5%; top: 12.8%; }
+
+    .minute-guide {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.84);
+      border: 2px solid var(--border);
+      box-shadow: 0 2px 5px rgba(31, 41, 55, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: bold;
+      color: #344154;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .g5 { left: 66.2%; top: 21.9%; color: var(--blue-deep); }
+    .g10 { left: 78.1%; top: 33.8%; color: var(--blue-deep); }
+    .g15 { left: 82%; top: 50%; color: var(--blue-deep); }
+    .g20 { left: 78.1%; top: 66.2%; color: var(--blue-deep); }
+    .g25 { left: 66.2%; top: 78.1%; color: var(--blue-deep); }
+    .g30 { left: 50%; top: 82%; color: #14345f; }
+    .g35 { left: 33.8%; top: 78.1%; color: var(--pink-deep); }
+    .g40 { left: 21.9%; top: 66.2%; color: var(--pink-deep); }
+    .g45 { left: 18%; top: 50%; color: var(--pink-deep); }
+    .g50 { left: 21.9%; top: 33.8%; color: var(--pink-deep); }
+    .g55 { left: 33.8%; top: 21.9%; color: var(--pink-deep); }
+
+    .hand {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform-origin: bottom center;
+      border-radius: 999px;
+      transition: transform 300ms ease;
+      z-index: 5;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .hand.dragging {
+      transition: none;
+      cursor: grabbing;
+    }
+
+    .minute-hand {
+      width: 8px;
+      height: 38%;
+      background: #14345f;
+      margin-left: -4px;
+      margin-top: -38%;
+      transform: rotate(0deg);
+    }
+
+    .hour-hand {
+      width: 12px;
+      height: 25%;
+      background: #5b6472;
+      margin-left: -6px;
+      margin-top: -25%;
+      transform: rotate(0deg);
+    }
+
+    .centre-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #14345f;
+      transform: translate(-50%, -50%);
+      border: 4px solid white;
+      box-shadow: 0 2px 7px rgba(31, 41, 55, 0.2);
+      z-index: 8;
+      pointer-events: none;
+    }
+
+    .grab-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      margin-top: -12px;
+      border-radius: 50%;
+      border: 4px solid #ffffff;
+      box-shadow: 0 3px 10px rgba(31, 41, 55, 0.22);
+      z-index: 9;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .grab-dot:active {
+      cursor: grabbing;
+    }
+
+    .minute-grab {
+      background: #14345f;
+      width: 22px;
+      height: 22px;
+      margin-left: -11px;
+      margin-top: -11px;
+    }
+
+    .hour-grab {
+      background: #5b6472;
+      width: 34px;
+      height: 34px;
+      margin-left: -17px;
+      margin-top: -17px;
+      z-index: 10;
+    }
+
+    .message-box {
+      background: var(--yellow);
+      border: 2px solid #f3d56b;
+      border-radius: 22px;
+      padding: 20px;
+      min-height: 205px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .message-title {
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      font-weight: bold;
+      color: #14345f;
+    }
+
+    .message-text {
+      font-size: clamp(1.08rem, 2vw, 1.4rem);
+      line-height: 1.45;
+      color: #364152;
+    }
+
+    .section-title {
+      margin: 20px 0 10px;
+      color: #14345f;
+      font-size: 1.35rem;
+      font-weight: bold;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    button {
+      border: none;
+      border-radius: 18px;
+      padding: 16px 18px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      color: #14345f;
+      background: #e8f2ff;
+      border: 2px solid #b8d7ff;
+      box-shadow: 0 4px 10px rgba(31, 41, 55, 0.08);
+    }
+
+    button:hover,
+    button:focus {
+      outline: 4px solid #cfe6ff;
+      background: #dbeeff;
+    }
+
+    .primary-button {
+      background: var(--green);
+      border-color: #bfe8cc;
+      color: var(--green-deep);
+      width: 100%;
+    }
+
+    .orange-button {
+      background: var(--orange);
+      border-color: #ffd19b;
+      color: var(--orange-deep);
+      width: 100%;
+    }
+
+    .choice-button {
+      background: #fff;
+      border-color: #cbd8ea;
+    }
+
+    .try-area,
+    .build-area,
+    .digital-area {
+      margin-top: 18px;
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .try-area {
+      background: var(--green);
+      border: 2px solid #bfe8cc;
+    }
+
+    .build-area {
+      background: var(--orange);
+      border: 2px solid #ffd19b;
+      display: none;
+    }
+
+    .digital-area {
+      background: var(--purple);
+      border: 2px solid #cdbfff;
+      display: none;
+    }
+
+    .try-question,
+    .build-question,
+    .digital-question {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    .try-question {
+      color: var(--green-deep);
+    }
+
+    .build-question {
+      color: var(--orange-deep);
+    }
+
+    .digital-question {
+      color: var(--purple-deep);
+    }
+
+    .choice-buttons,
+    .digital-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .feedback {
+      margin-top: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #14345f;
+      min-height: 28px;
+      line-height: 1.4;
+    }
+
+    .stars {
+      margin-top: 12px;
+      background: #fff;
+      border: 2px solid #bfe8cc;
+      border-radius: 18px;
+      padding: 12px;
+      font-size: 1.15rem;
+      color: var(--green-deep);
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .drag-note {
+      background: #ffffff;
+      border: 2px dashed #ffd19b;
+      border-radius: 16px;
+      padding: 12px;
+      margin-top: 12px;
+      color: var(--orange-deep);
+      font-weight: bold;
+      line-height: 1.4;
+    }
+
+    .note {
+      margin-top: 18px;
+      font-size: 1rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>Time Telling Helper</h1>
+      <div class="subtitle">
+        A gentle way to practise reading, making, and matching times.
+      </div>
+      <div class="level-pill" id="levelPill">Level 1: o'clock and half past</div>
+
+      <div class="mode-tabs" aria-label="Choose learning mode">
+        <button class="mode-tab active" id="readModeTab" onclick="setMode('read')">Read the clock</button>
+        <button class="mode-tab" id="buildModeTab" onclick="setMode('build')">Make the time</button>
+        <button class="mode-tab" id="digitalModeTab" onclick="setMode('digital')">Match digital time</button>
+      </div>
+
+      <div class="level-tabs" aria-label="Choose a practice level">
+        <button class="level-tab active" id="level1Tab" onclick="setLevel(1)">Level 1<br>o'clock + half past</button>
+        <button class="level-tab" id="level2Tab" onclick="setLevel(2)">Level 2<br>quarters</button>
+        <button class="level-tab" id="level3Tab" onclick="setLevel(3)">Level 3<br>past side</button>
+        <button class="level-tab" id="level4Tab" onclick="setLevel(4)">Level 4<br>to side</button>
+        <button class="level-tab" id="mixedTab" onclick="setLevel(5)">Mixed<br>all times</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <div class="clock-panel">
+        <div class="clock-shell">
+          <div class="clock-legend" aria-label="Clock side guide">
+            <div class="legend-item legend-to">Left side: to</div>
+            <div class="legend-item legend-past">Right side: past</div>
+          </div>
+
+          <div class="clock-wrap" id="clockWrap" aria-label="A teaching clock showing past and to sides">
+            <div class="clock-inner"></div>
+
+            <div class="minute-guide g5">5</div>
+            <div class="minute-guide g10">10</div>
+            <div class="minute-guide g15">15</div>
+            <div class="minute-guide g20">20</div>
+            <div class="minute-guide g25">25</div>
+            <div class="minute-guide g30">30</div>
+            <div class="minute-guide g35">25</div>
+            <div class="minute-guide g40">20</div>
+            <div class="minute-guide g45">15</div>
+            <div class="minute-guide g50">10</div>
+            <div class="minute-guide g55">5</div>
+
+            <div class="number n12">12</div>
+            <div class="number n1">1</div>
+            <div class="number n2">2</div>
+            <div class="number n3">3</div>
+            <div class="number n4">4</div>
+            <div class="number n5">5</div>
+            <div class="number n6">6</div>
+            <div class="number n7">7</div>
+            <div class="number n8">8</div>
+            <div class="number n9">9</div>
+            <div class="number n10">10</div>
+            <div class="number n11">11</div>
+
+            <div class="hand hour-hand" id="hourHand" title="Drag the short hour hand"></div>
+            <div class="hand minute-hand" id="minuteHand" title="Drag the long minute hand"></div>
+            <div class="grab-dot hour-grab" id="hourGrab" title="Drag the short hour hand"></div>
+            <div class="grab-dot minute-grab" id="minuteGrab" title="Drag the long minute hand"></div>
+            <div class="centre-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="teaching-panel">
+        <div class="message-box" aria-live="polite">
+          <div class="message-title" id="messageTitle">Let’s practise Level 1</div>
+          <div class="message-text" id="messageText">
+            In Level 1, we practise <strong>o'clock</strong> and <strong>half past</strong>.
+            First, look at the long minute hand.
+          </div>
+        </div>
+
+        <div id="readPanel">
+          <div class="section-title">Show me</div>
+          <div class="buttons" id="showButtons"></div>
+
+          <div class="try-area">
+            <div class="try-question" id="tryQuestion">Ready to try one?</div>
+            <button class="primary-button" onclick="newQuestion()">Give me a question</button>
+            <div class="choice-buttons" id="choiceButtons" style="display:none; margin-top: 12px;"></div>
+            <div class="feedback" id="feedback"></div>
+            <div class="stars" id="stars">Stars: ☆ ☆ ☆ ☆ ☆</div>
+            <button class="primary-button" style="margin-top: 12px;" onclick="showHelper()">Help me</button>
+          </div>
+        </div>
+
+        <div id="buildPanel" class="build-area">
+          <button class="orange-button" onclick="newBuildQuestion()">Give me a time to make</button>
+          <div class="build-question" id="buildQuestion" style="margin-top: 14px;">Press “Give me a time to make”.</div>
+          <div class="drag-note">Drag the long hand and the short hand on the clock. The long hand snaps to the 5-minute marks.</div>
+          <button class="orange-button" style="margin-top: 12px;" onclick="checkBuildAnswer()">Check my clock</button>
+          <div class="feedback" id="buildFeedback"></div>
+          <button class="orange-button" style="margin-top: 12px;" onclick="showHelper()">Help me</button>
+        </div>
+
+        <div id="digitalPanel" class="digital-area">
+          <button class="orange-button" onclick="newDigitalQuestion()">Give me a digital question</button>
+          <div class="digital-question" id="digitalQuestion" style="margin-top: 14px;">Press “Give me a digital question”.</div>
+          <div class="digital-buttons" id="digitalChoiceButtons" style="display:none; margin-top: 12px;"></div>
+          <div class="feedback" id="digitalFeedback"></div>
+          <button class="orange-button" style="margin-top: 12px;" onclick="showHelper()">Help me</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="note">
+      There are no timers and no harsh wrong answers. The goal is confidence first, accuracy second.
+    </div>
+  </main>
+
+  <script>
+    const clockWrap = document.getElementById('clockWrap');
+    const minuteHand = document.getElementById('minuteHand');
+    const hourHand = document.getElementById('hourHand');
+    const minuteGrab = document.getElementById('minuteGrab');
+    const hourGrab = document.getElementById('hourGrab');
+    const messageTitle = document.getElementById('messageTitle');
+    const messageText = document.getElementById('messageText');
+    const tryQuestion = document.getElementById('tryQuestion');
+    const choiceButtons = document.getElementById('choiceButtons');
+    const feedback = document.getElementById('feedback');
+    const stars = document.getElementById('stars');
+    const showButtons = document.getElementById('showButtons');
+    const levelPill = document.getElementById('levelPill');
+    const readPanel = document.getElementById('readPanel');
+    const buildPanel = document.getElementById('buildPanel');
+    const digitalPanel = document.getElementById('digitalPanel');
+    const readModeTab = document.getElementById('readModeTab');
+    const buildModeTab = document.getElementById('buildModeTab');
+    const digitalModeTab = document.getElementById('digitalModeTab');
+    const buildQuestion = document.getElementById('buildQuestion');
+    const buildFeedback = document.getElementById('buildFeedback');
+    const digitalQuestion = document.getElementById('digitalQuestion');
+    const digitalChoiceButtons = document.getElementById('digitalChoiceButtons');
+    const digitalFeedback = document.getElementById('digitalFeedback');
+
+    const tabs = {
+      1: document.getElementById('level1Tab'),
+      2: document.getElementById('level2Tab'),
+      3: document.getElementById('level3Tab'),
+      4: document.getElementById('level4Tab'),
+      5: document.getElementById('mixedTab')
+    };
+
+    let correctAnswer = '';
+    let correctCount = 0;
+    let currentLevel = 1;
+    let currentMode = 'read';
+    let currentQuestion = null;
+    let buildTarget = null;
+    let digitalAnswer = '';
+    let digitalQuestionData = null;
+    let completedMessageTimer = null;
+
+    let currentMinute = 0;
+    let currentHourDegrees = 0;
+    let draggingHand = null;
+
+    const timeTypes = {
+      oclock: { minute: 0, phrase: "o'clock", short: "o'clock" },
+      half: { minute: 30, phrase: 'half past', short: 'half past' },
+      quarterPast: { minute: 15, phrase: 'quarter past', short: 'quarter past' },
+      quarterTo: { minute: 45, phrase: 'quarter to', short: 'quarter to' },
+      past5: { minute: 5, phrase: '5 past', short: '5 past' },
+      past10: { minute: 10, phrase: '10 past', short: '10 past' },
+      past20: { minute: 20, phrase: '20 past', short: '20 past' },
+      past25: { minute: 25, phrase: '25 past', short: '25 past' },
+      to25: { minute: 35, phrase: '25 to', short: '25 to' },
+      to20: { minute: 40, phrase: '20 to', short: '20 to' },
+      to10: { minute: 50, phrase: '10 to', short: '10 to' },
+      to5: { minute: 55, phrase: '5 to', short: '5 to' }
+    };
+
+    function availableTypes() {
+      if (currentLevel === 1) return ['oclock', 'half'];
+      if (currentLevel === 2) return ['quarterPast', 'quarterTo'];
+      if (currentLevel === 3) return ['past5', 'past10', 'quarterPast', 'past20', 'past25'];
+      if (currentLevel === 4) return ['to25', 'to20', 'quarterTo', 'to10', 'to5'];
+      return ['oclock', 'half', 'quarterPast', 'quarterTo', 'past5', 'past10', 'past20', 'past25', 'to25', 'to20', 'to10', 'to5'];
+    }
+
+    function nextHour(hour) {
+      return hour === 12 ? 1 : hour + 1;
+    }
+
+    function previousHour(hour) {
+      return hour === 1 ? 12 : hour - 1;
+    }
+
+    function minuteToDegrees(minute) {
+      return minute * 6;
+    }
+
+    function hourToDegrees(hour, minute) {
+      return ((hour % 12) * 30) + (minute * 0.5);
+    }
+
+    function normaliseDegrees(degrees) {
+      return ((degrees % 360) + 360) % 360;
+    }
+
+    function angleDifference(a, b) {
+      const diff = Math.abs(normaliseDegrees(a) - normaliseDegrees(b));
+      return Math.min(diff, 360 - diff);
+    }
+
+    function pointOnClock(degrees, distance) {
+      const radians = degrees * (Math.PI / 180);
+      return {
+        x: 50 + ((Math.sin(radians) * distance) / clockWrap.getBoundingClientRect().width) * 100,
+        y: 50 - ((Math.cos(radians) * distance) / clockWrap.getBoundingClientRect().height) * 100
+      };
+    }
+
+    function updateGrabDots() {
+      const clockSize = clockWrap.getBoundingClientRect().width;
+      const minuteDistance = clockSize * 0.38;
+      const hourDistance = clockSize * 0.25;
+      const minuteDegrees = minuteToDegrees(currentMinute);
+
+      const minutePoint = pointOnClock(minuteDegrees, minuteDistance);
+      const hourPoint = pointOnClock(currentHourDegrees, hourDistance);
+
+      minuteGrab.style.left = `${minutePoint.x}%`;
+      minuteGrab.style.top = `${minutePoint.y}%`;
+      minuteGrab.style.transform = 'none';
+
+      hourGrab.style.left = `${hourPoint.x}%`;
+      hourGrab.style.top = `${hourPoint.y}%`;
+      hourGrab.style.transform = 'none';
+    }
+
+    function setHands(hour, type) {
+      const minute = timeTypes[type].minute;
+      const minuteDegrees = minuteToDegrees(minute);
+      const hourDegrees = hourToDegrees(hour, minute);
+      currentMinute = minute;
+      currentHourDegrees = normaliseDegrees(hourDegrees);
+      minuteHand.style.transform = `rotate(${minuteDegrees}deg)`;
+      hourHand.style.transform = `rotate(${hourDegrees}deg)`;
+      updateGrabDots();
+    }
+
+    function setRawHands(minute, hourDegrees) {
+      currentMinute = minute;
+      currentHourDegrees = normaliseDegrees(hourDegrees);
+      minuteHand.style.transform = `rotate(${minuteToDegrees(minute)}deg)`;
+      hourHand.style.transform = `rotate(${currentHourDegrees}deg)`;
+        updateGrabDots();
+      updateGrabDots();
+    }
+
+    function timeText(hour, type) {
+      if (type === 'oclock') return `${hour} o'clock`;
+      if (type === 'half') return `half past ${hour}`;
+      if (type === 'quarterPast') return `quarter past ${hour}`;
+      if (type === 'quarterTo') return `quarter to ${nextHour(hour)}`;
+      if (type.startsWith('past')) return `${timeTypes[type].phrase} ${hour}`;
+      if (type.startsWith('to')) return `${timeTypes[type].phrase} ${nextHour(hour)}`;
+    }
+
+    function digitalTimeText(hour, type) {
+      const minute = timeTypes[type].minute;
+      return `${hour}:${String(minute).padStart(2, '0')}`;
+    }
+
+    function minuteNumberForType(type) {
+      if (type === 'oclock') return '12';
+      if (type === 'half') return '6';
+      if (type === 'quarterPast') return '3';
+      if (type === 'quarterTo') return '9';
+      if (type === 'past5' || type === 'to5') return type === 'past5' ? '1' : '11';
+      if (type === 'past10' || type === 'to10') return type === 'past10' ? '2' : '10';
+      if (type === 'past20' || type === 'to20') return type === 'past20' ? '4' : '8';
+      if (type === 'past25' || type === 'to25') return type === 'past25' ? '5' : '7';
+    }
+
+    function explanationText(hour, type) {
+      const minuteNumber = minuteNumberForType(type);
+
+      if (type === 'oclock') return `The long minute hand points straight up to <strong>12</strong>. That means <strong>o'clock</strong>. The short hour hand points to <strong>${hour}</strong>.`;
+      if (type === 'half') return `The long minute hand points down to <strong>6</strong>. That means <strong>half past</strong>. The short hour hand has moved halfway between <strong>${hour}</strong> and the next number.`;
+      if (type === 'quarterPast') return `The long minute hand points to <strong>3</strong>. That means <strong>quarter past</strong>. The short hour hand has just gone past <strong>${hour}</strong>.`;
+      if (type === 'quarterTo') return `The long minute hand points to <strong>9</strong>. That means <strong>quarter to</strong>. The short hour hand is nearly at <strong>${nextHour(hour)}</strong>, so we say <strong>quarter to ${nextHour(hour)}</strong>.`;
+      if (type.startsWith('past')) return `The long minute hand points to <strong>${minuteNumber}</strong>. On the past side, we count up in fives. This is <strong>${timeTypes[type].phrase}</strong>. The short hour hand has gone past <strong>${hour}</strong>.`;
+      if (type.startsWith('to')) return `The long minute hand points to <strong>${minuteNumber}</strong>. On the to side, we count how many minutes until the next hour. This is <strong>${timeTypes[type].phrase}</strong>. The short hour hand is getting close to <strong>${nextHour(hour)}</strong>.`;
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      readModeTab.classList.toggle('active', mode === 'read');
+      buildModeTab.classList.toggle('active', mode === 'build');
+      digitalModeTab.classList.toggle('active', mode === 'digital');
+
+      readPanel.style.display = mode === 'read' ? 'block' : 'none';
+      buildPanel.style.display = mode === 'build' ? 'block' : 'none';
+      digitalPanel.style.display = mode === 'digital' ? 'block' : 'none';
+
+      if (mode === 'build') {
+        messageTitle.textContent = 'Make the time';
+        messageText.innerHTML = 'Drag the long hand and the short hand to make the time.';
+        resetBuildState();
+      } else if (mode === 'digital') {
+        messageTitle.textContent = 'Match digital time';
+        messageText.innerHTML = 'Look at the clock and choose the matching digital time.';
+        resetDigitalState();
+      } else {
+        setLevel(currentLevel);
+      }
+    }
+
+    function setLevel(level) {
+      currentLevel = level;
+      correctAnswer = '';
+      currentQuestion = null;
+      feedback.textContent = '';
+      choiceButtons.style.display = 'none';
+      correctCount = 0;
+      updateStars();
+
+      Object.keys(tabs).forEach(key => {
+        tabs[key].classList.toggle('active', Number(key) === level);
+      });
+
+      if (currentMode === 'build') resetBuildState();
+      if (currentMode === 'digital') resetDigitalState();
+
+      if (level === 1) {
+        levelPill.textContent = 'Level 1: o’clock and half past';
+        if (currentMode === 'read') {
+          messageTitle.textContent = 'Let’s practise Level 1';
+          messageText.innerHTML = 'In Level 1, we practise <strong>o\'clock</strong> and <strong>half past</strong>. First, look at the long minute hand.';
+          buildShowButtons([[3, 'oclock'], [3, 'half'], [6, 'oclock'], [6, 'half']]);
+          showExample(3, 'oclock');
+        }
+      }
+
+      if (level === 2) {
+        levelPill.textContent = 'Level 2: quarter past and quarter to';
+        if (currentMode === 'read') {
+          messageTitle.textContent = 'Let’s practise quarters';
+          messageText.innerHTML = 'In Level 2, we practise <strong>quarter past</strong> and <strong>quarter to</strong>. Look for the long minute hand pointing to <strong>3</strong> or <strong>9</strong>.';
+          buildShowButtons([[3, 'quarterPast'], [3, 'quarterTo'], [6, 'quarterPast'], [6, 'quarterTo']]);
+          showExample(3, 'quarterPast');
+        }
+      }
+
+      if (level === 3) {
+        levelPill.textContent = 'Level 3: past side practice';
+        if (currentMode === 'read') {
+          messageTitle.textContent = 'Past side practice';
+          messageText.innerHTML = 'On the <strong>past side</strong>, we count up in fives: <strong>5 past, 10 past, quarter past, 20 past, 25 past</strong>.';
+          buildShowButtons([[2, 'past5'], [2, 'past10'], [2, 'past20'], [2, 'past25']]);
+          showExample(2, 'past5');
+        }
+      }
+
+      if (level === 4) {
+        levelPill.textContent = 'Level 4: to side practice';
+        if (currentMode === 'read') {
+          messageTitle.textContent = 'To side practice';
+          messageText.innerHTML = 'On the <strong>to side</strong>, we count how many minutes are left until the next hour: <strong>25 to, 20 to, quarter to, 10 to, 5 to</strong>.';
+          buildShowButtons([[2, 'to25'], [2, 'to20'], [2, 'to10'], [2, 'to5']]);
+          showExample(2, 'to25');
+        }
+      }
+
+      if (level === 5) {
+        levelPill.textContent = 'Mixed practice';
+        if (currentMode === 'read') {
+          messageTitle.textContent = 'Mixed practice';
+          messageText.innerHTML = 'Now we can practise all the times we have learned so far.';
+          buildShowButtons([[4, 'oclock'], [4, 'half'], [4, 'past10'], [4, 'to10']]);
+          showExample(4, 'oclock');
+        }
+      }
+
+      tryQuestion.textContent = 'Ready to try one?';
+    }
+
+    function buildShowButtons(examples) {
+      showButtons.innerHTML = '';
+      examples.forEach(([hour, type]) => {
+        const button = document.createElement('button');
+        button.textContent = `Show ${timeText(hour, type)}`;
+        button.onclick = () => showExample(hour, type);
+        showButtons.appendChild(button);
+      });
+    }
+
+    function showExample(hour, type) {
+      setHands(hour, type);
+      feedback.textContent = '';
+      choiceButtons.style.display = 'none';
+      tryQuestion.textContent = 'Ready to try one?';
+      correctAnswer = '';
+      currentQuestion = null;
+
+      const title = timeText(hour, type);
+      messageTitle.textContent = title.charAt(0).toUpperCase() + title.slice(1);
+      messageText.innerHTML = explanationText(hour, type);
+    }
+
+    function newQuestion() {
+      const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      const types = availableTypes();
+      const hour = hours[Math.floor(Math.random() * hours.length)];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      currentQuestion = { hour, type };
+      setHands(hour, type);
+      correctAnswer = timeText(hour, type);
+
+      const answers = makeAnswerChoices(hour, type);
+      choiceButtons.innerHTML = '';
+
+      answers.forEach(answer => {
+        const button = document.createElement('button');
+        button.className = 'choice-button';
+        button.textContent = answer;
+        button.onclick = () => checkAnswer(answer);
+        choiceButtons.appendChild(button);
+      });
+
+      choiceButtons.style.display = 'grid';
+      messageTitle.textContent = 'Your turn';
+      messageText.innerHTML = 'Look carefully at the long minute hand first. Then check where the short hour hand is.';
+      tryQuestion.textContent = 'What time is this?';
+      feedback.textContent = '';
+    }
+
+    function makeAnswerChoices(hour, type) {
+      const types = availableTypes();
+      const choices = [timeText(hour, type)];
+      const shuffledTypes = types.filter(t => t !== type).sort(() => Math.random() - 0.5);
+
+      shuffledTypes.forEach(t => {
+        if (choices.length < 3) {
+          const option = timeText(hour, t);
+          if (!choices.includes(option)) choices.push(option);
+        }
+      });
+
+      while (choices.length < 3) {
+        const randomHour = Math.floor(Math.random() * 12) + 1;
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const option = timeText(randomHour, randomType);
+        if (!choices.includes(option)) choices.push(option);
+      }
+
+      return choices.sort(() => Math.random() - 0.5);
+    }
+
+    function checkAnswer(answer) {
+      if (!correctAnswer || !currentQuestion) {
+        feedback.textContent = 'Press “Give me a question” first.';
+        return;
+      }
+
+      if (answer === correctAnswer) {
+        correctCount += 1;
+        feedback.textContent = 'Brilliant! You spotted it.';
+        messageTitle.textContent = 'Great work!';
+        messageText.innerHTML = `Yes — this clock shows <strong>${correctAnswer}</strong>.`;
+        updateStars();
+      } else {
+        feedback.textContent = gentleHint(currentQuestion.hour, currentQuestion.type);
+      }
+    }
+
+    function gentleHint(hour, type) {
+      if (type === 'oclock') return 'Nearly. The long minute hand is pointing to 12, so it is o’clock.';
+      if (type === 'half') return 'Nearly. The long minute hand is pointing to 6, so it is half past.';
+      if (type === 'quarterPast') return 'Nearly. The long minute hand is pointing to 3, so it is quarter past.';
+      if (type === 'quarterTo') return `Nearly. The long minute hand is pointing to 9, so it is quarter to ${nextHour(hour)}.`;
+      if (type.startsWith('past')) return `Nearly. This is on the past side. Count up in fives: ${timeText(hour, type)}.`;
+      if (type.startsWith('to')) return `Nearly. This is on the to side. Count how many minutes until the next hour: ${timeText(hour, type)}.`;
+    }
+
+    function updateStars() {
+      const filled = Math.min(correctCount, 5);
+      const empty = 5 - filled;
+      stars.textContent = `Stars: ${'★ '.repeat(filled)}${'☆ '.repeat(empty)}`;
+
+      if (correctCount >= 5) {
+        stars.textContent = 'Stars: ★ ★ ★ ★ ★  Amazing! Level complete!';
+        messageTitle.textContent = 'Amazing!';
+        messageText.innerHTML = 'You completed this practice round. The stars will reset so you can try again.';
+
+        clearTimeout(completedMessageTimer);
+        completedMessageTimer = setTimeout(() => {
+          correctCount = 0;
+          updateStars();
+          feedback.textContent = '';
+          tryQuestion.textContent = 'Ready to try another round?';
+        }, 2500);
+      }
+    }
+
+    function resetBuildState() {
+      buildTarget = null;
+      buildQuestion.textContent = 'Press “Give me a time to make”.';
+      buildFeedback.textContent = '';
+      setRawHands(0, 0);
+    }
+
+    function newBuildQuestion() {
+      const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      const types = availableTypes();
+      const hour = hours[Math.floor(Math.random() * hours.length)];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      buildTarget = { hour, type };
+      buildFeedback.textContent = '';
+      setRawHands(0, 0);
+
+      buildQuestion.innerHTML = `Can you make: <strong>${timeText(hour, type)}</strong>?`;
+      messageTitle.textContent = 'Make the time';
+      messageText.innerHTML = 'Drag the long minute hand first. Then drag the short hour hand to where it should be.';
+    }
+
+    function checkBuildAnswer() {
+      if (!buildTarget) {
+        buildFeedback.textContent = 'Press “Give me a time to make” first.';
+        return;
+      }
+
+      const expectedMinute = timeTypes[buildTarget.type].minute;
+      const expectedHourDegrees = hourToDegrees(buildTarget.hour, expectedMinute);
+      const minuteCorrect = currentMinute === expectedMinute;
+      const hourCorrect = angleDifference(currentHourDegrees, expectedHourDegrees) <= 18;
+
+      if (minuteCorrect && hourCorrect) {
+        buildFeedback.textContent = 'Brilliant! You made the time correctly.';
+        messageTitle.textContent = 'You built it!';
+        messageText.innerHTML = `Yes — this clock shows <strong>${timeText(buildTarget.hour, buildTarget.type)}</strong>.`;
+      } else if (!minuteCorrect && !hourCorrect) {
+        buildFeedback.textContent = 'Nearly. Check both hands: the long hand and the short hand both need a little move.';
+      } else if (!minuteCorrect) {
+        buildFeedback.textContent = 'Nearly. The short hand looks close, but check where the long minute hand should point.';
+      } else {
+        buildFeedback.textContent = 'Nearly. The long hand is right, but check where the short hour hand should sit.';
+      }
+    }
+
+    function resetDigitalState() {
+      digitalAnswer = '';
+      digitalQuestionData = null;
+      digitalQuestion.textContent = 'Press “Give me a digital question”.';
+      digitalFeedback.textContent = '';
+      digitalChoiceButtons.style.display = 'none';
+      digitalChoiceButtons.innerHTML = '';
+      setHands(12, 'oclock');
+    }
+
+    function newDigitalQuestion() {
+      const hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      const types = availableTypes();
+      const hour = hours[Math.floor(Math.random() * hours.length)];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      digitalQuestionData = { hour, type };
+      digitalAnswer = digitalTimeText(hour, type);
+      setHands(hour, type);
+
+      digitalQuestion.innerHTML = 'Which digital time matches this clock?';
+      digitalFeedback.textContent = '';
+      digitalChoiceButtons.innerHTML = '';
+
+      makeDigitalChoices(hour, type).forEach(choice => {
+        const button = document.createElement('button');
+        button.className = 'choice-button';
+        button.textContent = choice;
+        button.onclick = () => checkDigitalAnswer(choice);
+        digitalChoiceButtons.appendChild(button);
+      });
+
+      digitalChoiceButtons.style.display = 'grid';
+      messageTitle.textContent = 'Match the digital time';
+      messageText.innerHTML = 'Look at the clock first, then choose the matching digital time.';
+    }
+
+    function makeDigitalChoices(hour, type) {
+      const choices = [digitalTimeText(hour, type)];
+      const types = availableTypes();
+      const wrongTypes = types.filter(t => t !== type).sort(() => Math.random() - 0.5);
+
+      wrongTypes.forEach(t => {
+        if (choices.length < 3) {
+          const option = digitalTimeText(hour, t);
+          if (!choices.includes(option)) choices.push(option);
+        }
+      });
+
+      while (choices.length < 3) {
+        const randomHour = Math.floor(Math.random() * 12) + 1;
+        const randomType = types[Math.floor(Math.random() * types.length)];
+        const option = digitalTimeText(randomHour, randomType);
+        if (!choices.includes(option)) choices.push(option);
+      }
+
+      return choices.sort(() => Math.random() - 0.5);
+    }
+
+    function checkDigitalAnswer(choice) {
+      if (!digitalAnswer || !digitalQuestionData) {
+        digitalFeedback.textContent = 'Press “Give me a digital question” first.';
+        return;
+      }
+
+      if (choice === digitalAnswer) {
+        digitalFeedback.textContent = 'Brilliant! That digital time matches the clock.';
+        messageTitle.textContent = 'Great matching!';
+        messageText.innerHTML = `Yes — <strong>${timeText(digitalQuestionData.hour, digitalQuestionData.type)}</strong> matches <strong>${digitalAnswer}</strong>.`;
+      } else {
+        digitalFeedback.textContent = `Nearly. This clock shows ${timeText(digitalQuestionData.hour, digitalQuestionData.type)}, which is ${digitalAnswer}.`;
+      }
+    }
+
+    function helperTextFor(hour, type) {
+      if (!hour || !type) return 'Press a question button first, then I can help.';
+      const minuteNumber = minuteNumberForType(type);
+
+      if (type === 'oclock') return `Step 1: Look at the long hand. It is pointing to 12. That means o’clock.<br>Step 2: Look at the short hand. It points to ${hour}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+      if (type === 'half') return `Step 1: Look at the long hand. It is pointing to 6. That means half past.<br>Step 2: Look at the short hand. It has gone past ${hour}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+      if (type === 'quarterPast') return `Step 1: Look at the long hand. It is pointing to 3. That means quarter past.<br>Step 2: Look at the short hand. It has just gone past ${hour}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+      if (type === 'quarterTo') return `Step 1: Look at the long hand. It is pointing to 9. That means quarter to.<br>Step 2: Look at the short hand. It is nearly at ${nextHour(hour)}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+      if (type.startsWith('past')) return `Step 1: Look at the long hand. It is pointing to ${minuteNumber}.<br>Step 2: This is on the past side, so we count up in fives.<br>Step 3: The short hand has gone past ${hour}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+      if (type.startsWith('to')) return `Step 1: Look at the long hand. It is pointing to ${minuteNumber}.<br>Step 2: This is on the to side, so we count how many minutes until the next hour.<br>Step 3: The short hand is nearly at ${nextHour(hour)}.<br>So the time is <strong>${timeText(hour, type)}</strong>.`;
+    }
+
+    function showHelper() {
+      if (currentMode === 'read') {
+        if (!currentQuestion) {
+          messageTitle.textContent = 'Helper mode';
+          messageText.innerHTML = 'Press <strong>Give me a question</strong> first, then I can help you step by step.';
+          return;
+        }
+        messageTitle.textContent = 'Helper mode';
+        messageText.innerHTML = helperTextFor(currentQuestion.hour, currentQuestion.type);
+        return;
+      }
+
+      if (currentMode === 'digital') {
+        if (!digitalQuestionData) {
+          messageTitle.textContent = 'Helper mode';
+          messageText.innerHTML = 'Press <strong>Give me a digital question</strong> first, then I can help you step by step.';
+          return;
+        }
+        messageTitle.textContent = 'Helper mode';
+        messageText.innerHTML = `${helperTextFor(digitalQuestionData.hour, digitalQuestionData.type)}<br>Digital time: <strong>${digitalAnswer}</strong>.`;
+        return;
+      }
+
+      if (currentMode === 'build') {
+        if (!buildTarget) {
+          messageTitle.textContent = 'Helper mode';
+          messageText.innerHTML = 'Press <strong>Give me a time to make</strong> first, then I can help you build it.';
+          return;
+        }
+        const expectedMinute = timeTypes[buildTarget.type].minute;
+        const expectedNumber = expectedMinute === 0 ? 12 : expectedMinute / 5;
+        messageTitle.textContent = 'Helper mode';
+        messageText.innerHTML = `${helperTextFor(buildTarget.hour, buildTarget.type)}<br>To build it, move the long hand to <strong>${expectedNumber}</strong>, then move the short hand to the right place.`;
+      }
+    }
+
+    function pointerAngle(event) {
+      const rect = clockWrap.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const x = event.clientX - centerX;
+      const y = event.clientY - centerY;
+      const radians = Math.atan2(y, x);
+      const degreesFromThree = radians * (180 / Math.PI);
+      return normaliseDegrees(degreesFromThree + 90);
+    }
+
+    function nearestFiveMinute(angle) {
+      const minute = Math.round((angle / 6) / 5) * 5;
+      return minute === 60 ? 0 : minute;
+    }
+
+    function startDrag(event, hand) {
+      if (currentMode !== 'build') return;
+      draggingHand = hand;
+
+      if (hand === 'minute') {
+        minuteHand.classList.add('dragging');
+        minuteGrab.classList.add('dragging');
+      }
+
+      if (hand === 'hour') {
+        hourHand.classList.add('dragging');
+        hourGrab.classList.add('dragging');
+      }
+
+      event.target.setPointerCapture(event.pointerId);
+      moveDrag(event);
+      updateGrabDots();
+    }
+
+    function moveDrag(event) {
+      if (!draggingHand || currentMode !== 'build') return;
+      const angle = pointerAngle(event);
+
+      if (draggingHand === 'minute') {
+        const snappedMinute = nearestFiveMinute(angle);
+        currentMinute = snappedMinute;
+        minuteHand.style.transform = `rotate(${minuteToDegrees(snappedMinute)}deg)`;
+        updateGrabDots();
+      }
+
+      if (draggingHand === 'hour') {
+        currentHourDegrees = normaliseDegrees(angle);
+        hourHand.style.transform = `rotate(${currentHourDegrees}deg)`;
+        updateGrabDots();
+      }
+    }
+
+    function snapHourIfClose() {
+      if (currentMode !== 'build' || !buildTarget) return;
+
+      const expectedMinute = timeTypes[buildTarget.type].minute;
+      const expectedHourDegrees = normaliseDegrees(hourToDegrees(buildTarget.hour, expectedMinute));
+      const closeEnough = angleDifference(currentHourDegrees, expectedHourDegrees) <= 24;
+
+      if (closeEnough) {
+        currentHourDegrees = expectedHourDegrees;
+        hourHand.style.transform = `rotate(${currentHourDegrees}deg)`;
+        updateGrabDots();
+        buildFeedback.textContent = 'Good positioning — the short hand has snapped into place.';
+      }
+    }
+
+    function endDrag(event) {
+      if (!draggingHand) return;
+
+      if (draggingHand === 'hour') {
+        snapHourIfClose();
+      }
+
+      minuteHand.classList.remove('dragging');
+      hourHand.classList.remove('dragging');
+      minuteGrab.classList.remove('dragging');
+      hourGrab.classList.remove('dragging');
+      draggingHand = null;
+      updateGrabDots();
+    }
+
+    minuteHand.addEventListener('pointerdown', event => startDrag(event, 'minute'));
+    hourHand.addEventListener('pointerdown', event => startDrag(event, 'hour'));
+    minuteGrab.addEventListener('pointerdown', event => startDrag(event, 'minute'));
+    hourGrab.addEventListener('pointerdown', event => startDrag(event, 'hour'));
+    window.addEventListener('pointermove', moveDrag);
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('resize', updateGrabDots);
+
+    setLevel(1);
+  </script>
+</body>
+</html>
